@@ -1,0 +1,186 @@
+Task 1. Figure out what security precautions are already used in your 'dvd_rental' database.  Prepare description
+Focus on:
+Existing users/roles and their permissions 
+Table-level privileges
+Any existing row-level security policies
+Database-level settings like connection limits or authentication methods 
+
+Prepare a detailed description in a text or docx file. Include SQL queries you used and their outputs for evidence
+Explain whether it is sufficient or risky. Identify at least one potential security vulnerability and suggest an improvement
+
+
+1.  
+roles/users
+
+```
+SELECT rolname       ---> this query display all existing user/roles in the database
+FROM	pg_roles
+```
+---> existing user/roles[
+"pg_database_owner"
+"pg_read_all_data"
+"pg_write_all_data"
+"pg_monitor"
+"pg_read_all_settings"
+"pg_read_all_stats"                            ---> only the postgres and ali users user, others are roles (I created analyst and ali earlier.)
+"pg_stat_scan_tables"
+"pg_read_server_files"
+"pg_write_server_files"
+"pg_execute_server_program"
+"pg_signal_backend"
+"pg_checkpoint"
+"pg_maintain"
+"pg_use_reserved_connections"
+"pg_create_subscription"
+"pg_signal_autovacuum_worker"
+"postgres"
+"analyst"	
+"ali"	                
+]  
+
+
+permissions:
+
+```
+SELECT	rolname, 
+		rolsuper AS is_superrole, 
+		rolcreaterole AS can_create_role, 
+		rolcreatedb AS can_create_database
+FROM	pg_roles
+```
+rolname                   is_superrole| can_create_role| can_create_database
+"pg_database_owner"	        false	  false	         false
+"pg_read_all_data"	        false	  false		 false
+"pg_write_all_data"	        false	  false		 false
+"pg_monitor"	                false	  false		 false
+"pg_read_all_settings"	        false	  false		 false
+"pg_read_all_stats"	        false	  false		 false
+"pg_stat_scan_tables"	        false	  false		 false
+"pg_read_server_files"	        false	  false		 false
+"pg_write_server_files"	        false	  false		 false
+"pg_execute_server_program"	false	  false		 false
+"pg_signal_backend"	        false	  false		 false
+"pg_checkpoint"	                false	  false		 false
+"pg_maintain"	                false	  false		 false
+"pg_use_reserved_connections"	false	  false		 false
+"pg_create_subscription"	false	  false		 false
+"pg_signal_autovacuum_worker"	false	  false		 false
+"postgres"	                true	  true		 true
+"analyst"	                false	  false	         false
+"ali"	                        false	  false	         false
+
+2  Table-level privileges
+```
+ SELECT table_name, privilege_type
+FROM information_schema.role_table_grants
+WHERE table_schema = 'public'
+```
+table_name       privilege_type
+"film_actor"	"INSERT"
+"film_actor"	"SELECT"
+"film_actor"	"UPDATE"                        ---> copied only the privileges of 3 tables, since there were 213 rows for all tables
+"film_actor"	"DELETE"
+"film_actor"	"TRUNCATE"
+"film_actor"	"REFERENCES"
+"film_actor"	"TRIGGER"
+"store"		"INSERT"
+"store"		"SELECT"
+"store"		"UPDATE"
+"store"		"DELETE"
+"store"		"TRUNCATE"
+"store"		"REFERENCES"
+"store"		"TRIGGER"
+"rental"	"INSERT"
+"rental"	"SELECT"
+"rental"	"UPDATE"
+"rental"	"DELETE"
+"rental"	"TRUNCATE"
+"rental"	"REFERENCES"
+"rental"	"TRIGGER"
+
+3 Any existing row-level security policies
+
+```
+SELECT *
+FROM pg_policies;
+```
+"public"	"customer"	"user_ali"	"PERMISSIVE"	"{public}"	"ALL"	"((customer_id % 2) = 1)" ---> There is only row-level security policy that I created earlier.
+
+
+4.Database-level settings like connection limits or authentication methods:
+ 1.Connection limits
+  ```
+SELECT datname AS database, datconnlimit AS connection_limit
+FROM	pg_database;
+```
+
+database                 connection_limit
+"postgres"		-1                        ---> -1 means unlimited connections in same time, 0 connection is not allowed in same time, positive number - the max number of connection 
+"template1"		-1
+"template0"		-1                              in same time
+"training_center"	-1
+"for_assignment"	-1
+"delivery"		-1
+"subway"		-1
+"dvdrental_dml"		-1
+
+
+```
+ALTER DATABASE postgres CONNECTION LIMIT 50;       ---> now only 50 sessions can be connected to that database at the same time.
+```
+-----------------------------------------------
+```
+SELECT datname AS database, datconnlimit AS connection_limit
+FROM	pg_database;
+```
+
+database                 connection_limit                        
+"template1"		-1
+"template0"		-1                              
+"training_center"	-1
+"for_assignment"	-1
+"delivery"		-1
+"subway"		-1
+"dvdrental_dml"		-1
+"postgres"		50
+
+
+2 Authentication methods
+
+Authentication methods are used to verify a user’s identity before allowing a connection to PostgreSQL, using methods such as password, OS-based authentication, or certificates.
+
+We use pg_hba.conf to define and manage authentication methods in PostgreSQL.
+
+To open it I used powershell:  notepad "C:/Program Files/PostgreSQL/18/data/pg_hba.conf"
+
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# "local" is for Unix domain socket connections only
+local   all             all                                     scram-sha-256 --> password required(authentication methods)  --- Uses strong hashing
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            scram-sha-256
+# IPv6 local connections:
+host    all             all             ::1/128                 scram-sha-256
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     scram-sha-256
+host    replication     all             127.0.0.1/32            scram-sha-256
+host    replication     all             ::1/128                 scram-sha-256
+
+Other authentication methods:
+md5 - Password-based authentication, uses MD5 hashing
+password - Sends password in plain text insecure
+trust - No password required, anyone matching the rule can connect
+..
+
+
+Explain whether it is sufficient or risky. Identify at least one potential security vulnerability and suggest an improvement
+
+Unlimited number of connections at the same time can be dangerous.
+
+Each connection uses:memory CPU backend process ---> Too many connections can: slow down the database crash PostgreSQL freeze the system
+
+We can change limit the  connections depending on conditions. If the database stores the special data from a one company we can put the  number of workers as limit limit
+```
+ALTER DATABASE dvdrental_dml CONNECTION LIMIT 100;
+```

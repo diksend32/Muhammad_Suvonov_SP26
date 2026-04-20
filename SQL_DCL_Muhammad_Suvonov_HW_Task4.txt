@@ -1,0 +1,27 @@
+Task 4
+1.How can one restrict access to certain columns of a database table?
+
+using GRANT and REVOKE on specific columns
+```
+GRANT SELECT (first_name, last_name)
+ON public.customer
+TO analyst;
+```
+
+```
+REVOKE SELECT (email, phone)
+ON public.customer
+FROM analyst;
+```
+
+2.What is the difference between user identification and user authentication?
+user identification - connecting to the database using special security like(password, certificate-based and others)
+
+user authentication - controling privileges on object to users
+
+3.What are the recommended authentication protocols for PostgreSQL?
+ Database objects must be granted in a depersonalized and systemic way which means we nee d to give give privileges to roles not to users.
+And at the same time, the access to the database must not be depersonalized which means we  must always know exactly which person did what
+
+4. What is proxy authentication in PostgreSQL and what is it for? Why does it make the previously discussed role-based access control easier to implement?
+Proxy authentication is essentially identity switching. It allows a user to log in as themselves but then "act" as a different role with different permissions without needing that second role's password
