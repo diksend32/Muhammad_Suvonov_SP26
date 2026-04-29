@@ -1,0 +1,72 @@
+1. Business Idea
+In this project, I created a simple database for a household appliances store. The idea is to simulate how a real shop works.
+The store sells products like phones, laptops, monitors, and accessories. Customers can place orders, employees handle those orders, and suppliers provide the products. The system also keeps track of stock and customer addresses.
+
+2. Database Structure and Relationships
+First, I started by creating the main tables that don’t depend on anything else, like:
+customer
+employee
+supplier
+category
+address
+
+After that, I added relationships between tables using foreign keys.
+Main relationships:
+
+Product → Category & Supplier
+Each product belongs to one category and one supplier.
+
+Orders → Customer & Employee
+Each order is created by one customer and processed by one employee.
+
+Product ↔ Orders (many-to-many)
+One order can have many products, and one product can appear in many orders.
+For this, I used a bridge table called product_order.
+
+Customer ↔ Address (many-to-many)
+One customer can have multiple addresses, and one address can be linked to multiple customers.
+For this, I created customer_address.
+
+These relationships helped me normalize the database and avoid duplicate data.
+
+3. Constraints (Data Rules)
+After creating tables, I added constraints to make sure the data is valid and clean.
+Some of the important constraints:
+
+Product price must be greater than 0
+Quantity in inventory must not be negative
+Order status can only be: pending, shipped, delivered
+Email must be a Gmail address (%@gmail.com)
+Order date cannot be earlier than 2026-01-01
+Category names must be unique
+
+These constraints help prevent wrong or unrealistic data from entering the database.
+
+4. ALTER TABLE Changes
+After creating the tables, I used ALTER TABLE to modify and improve the structure.
+I used it for things like:
+Adding check constraints after table creation
+Setting default values (like order_date defaulting to NOW())
+Making sure important columns are NOT NULL
+Adding uniqueness rules where needed
+This step helped me improve the design without recreating tables again.
+
+5. Inserting Data
+After the structure was ready, I inserted sample data into all tables.
+I added at least 6+ rows per table:
+customers
+employees
+categories
+suppliers
+products
+orders
+inventory
+addresses
+
+For inserting data, I used different methods:
+
+
+Direct INSERT INTO for simple tables
+INSERT with SELECT + JOIN for relational data (like products and orders)
+This helped me correctly connect foreign keys using real values like emails and names instead of manually typing IDs.
+I also used ON CONFLICT DO NOTHING to avoid duplicate errors while inserting data multiple times.
