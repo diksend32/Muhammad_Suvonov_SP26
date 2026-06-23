@@ -61,7 +61,7 @@ def load_documents(filepath):
             if len(parts) != 2:
                 continue
 
-            doc_id = int(parts[0])   # keep original ID
+            doc_id = int(parts[0])  
             text = parts[1]
 
             documents[doc_id] = text
