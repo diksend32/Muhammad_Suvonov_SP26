@@ -1,25 +1,13 @@
--- ============================================================
--- STAGING LAYER: Source 1 – Offline Sales
--- Schema: sa_offline_sales
--- External table: ext_offline_sales
--- Source table:   src_offline_sales
--- ============================================================
 
--- 0. Enable file_fdw extension (run once per database)
+-- STAGING LAYER: Source 1 – Offline Sales
+
+
 CREATE EXTENSION IF NOT EXISTS file_fdw;
 
--- 1. Foreign server for flat-file access
 CREATE SERVER IF NOT EXISTS fs_offline_sales
     FOREIGN DATA WRAPPER file_fdw;
 
--- 2. Schema
 CREATE SCHEMA IF NOT EXISTS sa_offline_sales;
-
--- ============================================================
--- 3. EXTERNAL (FOREIGN) TABLE
---    Points at the raw CSV drop location.
---    Adjust filename / delimiter to match your actual file.
--- ============================================================
 DROP FOREIGN TABLE IF EXISTS sa_offline_sales.ext_offline_sales;
 
 CREATE FOREIGN TABLE sa_offline_sales.ext_offline_sales (
@@ -38,7 +26,7 @@ CREATE FOREIGN TABLE sa_offline_sales.ext_offline_sales (
     Brand                       TEXT,
     MadeIn                      TEXT,
     PaymentId                   TEXT,
-    PaymentType                 TEXT,   -- "Payment type" mapped to valid identifier
+    PaymentType                 TEXT,   
     Quantity                    TEXT,
     UnitPriceInUSD              TEXT,
     TotalAmountUSD              TEXT,
@@ -84,9 +72,7 @@ OPTIONS (
     null        ''
 );
 
--- ============================================================
--- 4. SOURCE TABLE  (typed, deduplicated)
--- ============================================================
+
 DROP TABLE IF EXISTS sa_offline_sales.src_offline_sales;
 
 CREATE TABLE sa_offline_sales.src_offline_sales (
@@ -146,12 +132,8 @@ CREATE TABLE sa_offline_sales.src_offline_sales (
     _src_load_ts    TIMESTAMP DEFAULT NOW()
 );
 
--- ============================================================
--- 5. LOAD: Deduplicate on INSERT
---    Deduplication key: OrderID (natural business key).
---    Within duplicates, keep the row with the latest OrderDate;
---    ties broken by row_number() to guarantee a single winner.
--- ============================================================
+
+
 TRUNCATE sa_offline_sales.src_offline_sales;
 
 INSERT INTO sa_offline_sales.src_offline_sales (
