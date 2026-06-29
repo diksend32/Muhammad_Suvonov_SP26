@@ -1,11 +1,7 @@
--- ============================================================
 -- STAGING LAYER: Source 2 – Online Sales
--- Schema: sa_online_sales
--- External table: ext_online_sales
--- Source table:   src_online_sales
--- ============================================================
 
--- 0. Extension already created in source-1 script; safe to repeat
+
+
 CREATE EXTENSION IF NOT EXISTS file_fdw;
 
 -- 1. Foreign server for flat-file access
@@ -15,9 +11,7 @@ CREATE SERVER IF NOT EXISTS fs_online_sales
 -- 2. Schema
 CREATE SCHEMA IF NOT EXISTS sa_online_sales;
 
--- ============================================================
--- 3. EXTERNAL (FOREIGN) TABLE
--- ============================================================
+
 DROP FOREIGN TABLE IF EXISTS sa_online_sales.ext_online_sales;
 
 CREATE FOREIGN TABLE sa_online_sales.ext_online_sales (
@@ -40,7 +34,7 @@ CREATE FOREIGN TABLE sa_online_sales.ext_online_sales (
     Quantity                    TEXT,
     UnitPriceInUSD              TEXT,
     TotalAmountInUSD            TEXT,
-    PaymentType                 TEXT,   -- "Payment type"
+    PaymentType                 TEXT,  
     Currency                    TEXT,
     USDRate                     TEXT,
     UnitPriceInLocalCurrency    TEXT,
@@ -83,9 +77,7 @@ OPTIONS (
     null        ''
 );
 
--- ============================================================
--- 4. SOURCE TABLE  (typed, deduplicated)
--- ============================================================
+
 DROP TABLE IF EXISTS sa_online_sales.src_online_sales;
 
 CREATE TABLE sa_online_sales.src_online_sales (
@@ -146,10 +138,7 @@ CREATE TABLE sa_online_sales.src_online_sales (
     _src_load_ts    TIMESTAMP DEFAULT NOW()
 );
 
--- ============================================================
--- 5. LOAD: Deduplicate on INSERT
---    Deduplication key: OrderID
--- ============================================================
+
 TRUNCATE sa_online_sales.src_online_sales;
 
 INSERT INTO sa_online_sales.src_online_sales (
