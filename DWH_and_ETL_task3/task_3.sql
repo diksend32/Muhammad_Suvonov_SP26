@@ -122,7 +122,131 @@ GROUP BY 1
 ORDER BY 1;
 
 
+--creating B-tree index
 
+CREATE INDEX b_tree
+ON labs.test_index(load_date)
+
+
+SELECT date_trunc('year', load_date), max(num)
+FROM  labs.test_index
+WHERE load_date BETWEEN '2021-09-01 0:00' AND '2021-10-31 11:59:59'
+GROUP BY 1
+ORDER BY 1;
+
+
+-- Check index size
+
+
+SELECT pg_size_pretty(
+    pg_relation_size('labs.b_tree')
+);
+
+
+DROP INDEX labs.b_tree;
+
+
+--creating BRIN INDEX
+
+
+CREATE INDEX  brin_index
+ON labs.test_index
+USING BRIN (load_date);
+
+
+SELECT date_trunc('year', load_date), MAX(num)
+FROM labs.test_index
+WHERE load_date BETWEEN '2021-09-01 00:00'
+AND '2021-10-31 11:59:59'
+GROUP BY 1
+ORDER BY 1;
+
+
+DROP INDEX  labs.brin_index;
+
+
+CREATE TABLE labs.test_index AS
+SELECT
+    id,
+    md5(id::text) AS t_hash
+FROM generate_series(1, 10000000) AS id;
+
+SELECT pg_size_pretty(
+    pg_relation_size('labs.test_index')
+);
+
+SELECT *
+FROM labs.test_index
+WHERE t_hash LIKE '%ceea167a5a%';
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE INDEX idx_text_index_gist
+ON labs.test_index
+USING GIST (t_hash gist_trgm_ops);
+
+SELECT
+    pg_size_pretty(
+        pg_relation_size('labs.idx_text_index_gist')
+    );
+
+DROP INDEX labs.idx_text_index_gist;
+
+CREATE INDEX idx_text_index_gin
+ON labs.test_index
+USING GIN (t_hash gin_trgm_ops);
+
+SELECT
+    pg_size_pretty(
+        pg_relation_size('labs.idx_text_index_gin')
+    );
+
+DROP INDEX labs.idx_text_index_gin;
+
+
+-- FOREIGN DATA WRAPPERS
+
+
+
+CREATE EXTENSION IF NOT EXISTS file_fdw;
+
+CREATE SERVER test_import
+FOREIGN DATA WRAPPER file_fdw;
+
+CREATE FOREIGN TABLE labs.test_foreign_table
+(
+    LatD INT,
+    LatM INT,
+    LatS INT,
+    NS TEXT,
+    LonD INT,
+    LonM INT,
+    LonS INT,
+    EW TEXT,
+    City TEXT,
+    State TEXT
+)
+SERVER test_import
+OPTIONS
+(
+    filename 'C:\epam\dwh\dwh2\DWH_and_ETL_task3\cities_list.csv',
+    format 'csv',
+    header 'true',
+    delimiter ','
+);
+
+SELECT *
+FROM labs.test_foreign_table;
+
+SELECT COUNT(*)
+FROM labs.test_foreign_table;
+
+CREATE MATERIALIZED VIEW mview AS
+SELECT *
+FROM labs.test_foreign_table;
+
+SELECT COUNT(*)
+FROM mview;
 
 
 
